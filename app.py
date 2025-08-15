@@ -4,12 +4,14 @@ import streamlit as st
 
 st.set_page_config(page_title="WIZ Report Viewer", layout="wide")
 
+
 def load_csv(file) -> pd.DataFrame:
     """Load CSV from uploaded file into a DataFrame.
     Handles common separators and missing values.
     """
     df = pd.read_csv(file, encoding="utf-8", low_memory=False)
     return df
+
 
 def render_df(df: pd.DataFrame):
     """Render DataFrame with link column conversion.
@@ -23,14 +25,15 @@ def render_df(df: pd.DataFrame):
             )
     st.dataframe(df, use_container_width=True)
 
+
 def export_excel(df: pd.DataFrame, filename: str = "report.xlsx"):
     """Return BytesIO buffer of Excel file."""
     output = io.BytesIO()
-    writer = pd.ExcelWriter(output, engine="openpyxl")
-    df.to_excel(writer, index=False, sheet_name="Sheet1")
-    writer.save()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Sheet1")
     output.seek(0)
     return output
+
 
 def main():
     st.title("WIZ Report Viewer")
@@ -51,11 +54,17 @@ def main():
 
     # Filtering UI
     st.subheader("Filter")
-    filter_col = st.selectbox("Filter column", options=["None"] + list(df.columns), key="filter_col")
+    filter_col = st.selectbox(
+        "Filter column", options=["None"] + list(df.columns), key="filter_col"
+    )
     if filter_col != "None":
         filter_val = st.text_input("Filter value", key="filter_val")
         if filter_val:
-            df = df[df[filter_col].astype(str).str.contains(filter_val, case=False, na=False)]
+            df = df[
+                df[filter_col]
+                .astype(str)
+                .str.contains(filter_val, case=False, na=False)
+            ]
 
     # Render table
     render_df(df)
@@ -69,6 +78,7 @@ def main():
         file_name="report.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
 
 if __name__ == "__main__":
     main()
