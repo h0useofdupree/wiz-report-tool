@@ -19,29 +19,18 @@
         name = "wiz-report-tool-dev";
 
         packages = [
-          pkgs.python312
-          pkgs.python312Packages.venvShellHook
+          (pkgs.python312.withPackages (ps: [
+            ps.numpy
+            ps.pandas
+            ps.streamlit
+            ps.openpyxl
+          ]))
           pkgs.git
         ];
 
-        venvDir = ".venv";
-
-        # one-time setup when the venv is created
-        postVenvCreation = ''
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
-        '';
-
-        postShellHook = ''
-          if [ -z "''${VIRTUAL_ENV-}" ]; then
-            source .venv/bin/activate
-          fi
-
-          export PIP_DISABLE_PIP_VERSION_CHECK=1
-          export PYTHONDONTWRITEBYTECODE=1
+        shellHook = ''
           echo "🐍 $(python --version)"
+          echo "💡 Streamlit: streamlit run app.py"
         '';
       };
     });
