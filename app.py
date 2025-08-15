@@ -47,10 +47,14 @@ def main():
 
     # Sorting UI
     st.subheader("Sort")
-    sort_col = st.selectbox("Column", options=["None"] + list(df.columns))
-    if sort_col != "None":
-        ascending = st.checkbox("Ascending", value=True)
-        df = df.sort_values(by=sort_col, ascending=ascending)
+    sort_cols = st.multiselect("Columns", options=list(df.columns))
+    if sort_cols:
+        orders = []
+        for col in sort_cols:
+            orders.append(
+                st.checkbox(f"Ascending for {col}", value=True, key=f"asc_{col}")
+            )
+        df = df.sort_values(by=sort_cols, ascending=orders)
 
     # Filtering UI
     st.subheader("Filter")
