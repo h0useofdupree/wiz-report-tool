@@ -45,6 +45,20 @@ def main():
 
     df = load_csv(uploaded_file)
 
+    # Identify numericc and datetime columns
+    numeric_cols: list[str] = []
+    date_cols: list[str] = []
+    for col in df.columns:
+        num_series = pd.to_numeric(df[col], errors="coerce")
+        if not num_series.isna().all():
+            df[col] = num_series
+            numeric_cols.append(col)
+            continue
+        date_series = pd.to_datetime(df[col], errors="coerce")
+        if not date_series.isna().all():
+            df[col] = date_series
+            date_cols.append(col)
+
     # Sorting UI
     st.subheader("Sort")
     sort_cols = st.multiselect("Columns", options=list(df.columns))
@@ -58,17 +72,87 @@ def main():
 
     # Filtering UI
     st.subheader("Filter")
-    filter_col = st.selectbox(
-        "Filter column", options=["None"] + list(df.columns), key="filter_col"
-    )
-    if filter_col != "None":
-        filter_val = st.text_input("Filter value", key="filter_val")
-        if filter_val:
-            df = df[
-                df[filter_col]
-                .astype(str)
-                .str.contains(filter_val, case=False, na=False)
-            ]
+    if "filter_count" not in st.session_state:
+        st.session_state.filter_count = 1
+    if st.button("Add filter"):
+        st.session_state.filter_count += 1
+    logic = st.radio("Combine conditions with", ["AND", "OR"], horizontal=True)
+
+    filter_rows = []
+    for i in range(st.session_state.filter_count):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            column = st.selectbox(
+                f"Column {i + 1}", options=list(df.columns), key=f"f_col_{i}"
+            )
+        with col2:
+            options = ["equals", "contains"]
+            if column in numeric_cols or column in date_cols:
+                options.extend(["gt", "lt", "range"])
+            condition = st.selectbox(
+                f"Condition {i + 1}", options=options, key=f"f_cond_{i}"
+            )
+        with col3:
+            if condition == "range":
+                value1 = st.text_input("From", key=f"f_val1_{i}")
+            else:
+                value1 = st.text_input("Value", key=f"f_val_{i}")
+        with col4:
+            value2 = (
+                st.text_input("To", key=f"f_val2_{i}") if condition == "range" else None
+            )
+        filter_rows.append((column, condition, value1, value2))
+
+    mask = None
+    for column, condition, value1, value2 in filter_rows:
+        # Skip invalid rows
+        if condition == "range":
+            if not value1 or not value2:
+                continue
+        else:
+            if not value1:
+                continue
+
+        series = df[column]
+        if column in numeric_cols:
+            v1 = pd.to_numeric(value1, errors="coerce")
+            if condition == "equals":
+                row_mask = series == v1
+            elif condition == "gt":
+                row_mask = series > v1
+            elif condition == "lt":
+                row_mask = series < v1
+            elif condition == "range":
+                v2 = pd.to_numeric(value2, errors="coerce")
+                row_mask = series.between(v1, v2)
+            else:
+                row_mask = series.astype(str).str.contains(value1, case=False, na=False)
+        elif column in date_cols:
+            v1 = pd.to_datetime(value1, errors="coerce")
+            if condition == "equals":
+                row_mask = series == v1
+            elif condition == "gt":
+                row_mask = series > v1
+            elif condition == "lt":
+                row_mask = series < v1
+            elif condition == "range":
+                v2 = pd.to_datetime(value2, errors="coerce")
+                row_mask = series.between(v1, v2)
+            else:
+                row_mask = series.astype(str).str.contains(value1, case=False, na=False)
+        else:
+            if condition == "equals":
+                row_mask = series.astype(str).str.lower() == value1.lower()
+            else:
+                row_mask = series.astype(str).str.contains(value1, case=False, na=False)
+
+        if mask is None:
+            mask = row_mask
+        else:
+            mask = mask & row_mask if logic == "AND" else mask | row_mask
+
+    if mask is not None:
+        df = df[mask]
 
     # Render table
     render_df(df)
