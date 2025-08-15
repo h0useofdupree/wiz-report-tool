@@ -28,6 +28,11 @@ def render_df(df: pd.DataFrame):
 
 def export_excel(df: pd.DataFrame, filename: str = "report.xlsx"):
     """Return BytesIO buffer of Excel file."""
+    # Drop tz info for excel export
+    df = df.copy()
+    for col in df.select_dtypes(include=["datetimetz"]).columns:
+        df[col] = df[col].dt.tz_localize(None)
+
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Sheet1")
@@ -56,6 +61,8 @@ def main():
             continue
         date_series = pd.to_datetime(df[col], errors="coerce")
         if not date_series.isna().all():
+            if pd.api.types.is_datetime64tz_dtype(date_series):
+                date_series = date_series.dt.tz_localize(None)
             df[col] = date_series
             date_cols.append(col)
 
