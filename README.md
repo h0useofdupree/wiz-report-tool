@@ -4,8 +4,8 @@ WiZ/CyCognito Report Tool für PVO
 
 ## Requirements
 
-The dependencies are documented in ``requirements.txt``. Install them
-using ``pip`` before running the app.
+The dependencies are documented in `requirements.txt`. Install them using `pip`
+before running the app.
 
 ```bash
 pip install -r requirements.txt
@@ -19,14 +19,6 @@ The tool is built with Streamlit. Run it locally with:
 streamlit run app.py
 ```
 
-You can also build a static version for sharing:
-
-```bash
-streamlit build app.py
-```
-
-**Happy coding!**
-
 ## Installation
 
 ```bash
@@ -37,5 +29,7 @@ pip install -r requirements.txt
 
 ```bash
 streamlit run app.py
+```
+
 ```
 ```
