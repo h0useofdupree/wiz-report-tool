@@ -54,13 +54,19 @@ def main():
     numeric_cols: list[str] = []
     date_cols: list[str] = []
     for col in df.columns:
-        num_series = pd.to_numeric(df[col], errors="coerce")
-        if not num_series.isna().all():
+        series = df[col]
+        # HACK: Only treat as numeric if all non-empty values are numeric
+        # (should prevent mixed cols like subscription-id)
+        non_empty = series.astype(str).str.strip() != ""
+        num_series = pd.to_numeric(series, errors="coerce")
+        if non_empty.any() and num_series[non_empty].notna().all():
             df[col] = num_series
             numeric_cols.append(col)
             continue
-        date_series = pd.to_datetime(df[col], errors="coerce")
-        if not date_series.isna().all():
+
+        # HACK: Only convert to datetimes if all populated rows parse
+        date_series = pd.to_datetime(series, errors="coerce")
+        if non_empty.any() and date_series[non_empty].notna().all():
             if pd.api.types.is_datetime64tz_dtype(date_series):
                 date_series = date_series.dt.tz_localize(None)
             df[col] = date_series
