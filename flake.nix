@@ -24,6 +24,7 @@
             ps.pandas
             ps.streamlit
             ps.openpyxl
+            ps.pytest
           ]))
           pkgs.git
         ];
