@@ -12,6 +12,14 @@ once in the directory and download all the dependencies.
 pip install -r requirements.txt
 ```
 
+# For faster CSV parsing you can optionally install `pyarrow`
+
+```bash
+pip install pyarrow
+```
+
+or uncomment pyarrow in `requirements.txt`
+
 ## Project Structure
 
 The application is split into small modules under the `wiz_report_tool` package:
@@ -35,4 +43,11 @@ Basic tests cover CSV loading, filtering and export helpers. Run them with:
 
 ```bash
 pytest
+```
+
+> To get a rough idea of CSV loading performance, run the additional benchmark
+> test:
+
+```bash
+pytest tests/test_performance.py -s
 ```
