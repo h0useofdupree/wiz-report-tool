@@ -25,6 +25,7 @@
             ps.streamlit
             ps.openpyxl
             ps.pytest
+            ps.pyarrow
           ]))
           pkgs.git
         ];
