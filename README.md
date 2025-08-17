@@ -39,7 +39,7 @@ streamlit run app.py
 
 ## Tests
 
-Basic tests cover CSV loading, filtering and export helpers. Run them with:
+> Basic tests cover CSV loading, filtering and export helpers. Run them with:
 
 ```bash
 pytest
