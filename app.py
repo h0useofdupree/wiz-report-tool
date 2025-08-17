@@ -19,6 +19,45 @@ def main():
 
     df = filter_dataframe(df)
 
+    # Sidebar configuration for conditional formatting
+    if "highlight_rules" not in st.session_state:
+        st.session_state.highlight_rules = []
+
+    st.sidebar.header("Highlight Rules")
+    with st.sidebar.expander("Add rule"):
+        rule_col = st.selectbox("Column", options=list(df.columns), key="hr_col")
+        rule_op = st.selectbox(
+            "Condition", options=[">", "<", "==", "contains"], key="hr_op"
+        )
+        rule_val = st.text_input("Value", key="hr_val")
+        rule_color = st.color_picker("Color", "#ffff00", key="hr_color")
+        if st.button("Add", key="hr_add"):
+            typed_val = rule_val
+            if rule_op in [">", "<", "=="] and pd.api.types.is_numeric_dtype(
+                df[rule_col]
+            ):
+                try:
+                    typed_val = float(rule_val)
+                except ValueError:
+                    st.sidebar.warning("Enter a numeric value for this column")
+                    typed_val = None
+            if typed_val is not None:
+                st.session_state.highlight_rules.append(
+                    {
+                        "column": rule_col,
+                        "op": rule_op,
+                        "value": typed_val,
+                        "color": rule_color,
+                    }
+                )
+    if st.sidebar.button("Clear rules"):
+        st.session_state.highlight_rules = []
+
+    for r in st.session_state.highlight_rules:
+        st.sidebar.write(
+            f"{r['column']} {r['op']} {r['value']} -> {r.get('color', 'yellow')}"
+        )
+
     # NOTE: Basic metrics visualisation
     st.subheader("Summary")
     summary_col = st.selectbox("Column to summarize", options=list(df.columns))
@@ -34,7 +73,7 @@ def main():
     else:
         st.bar_chart(counts)
 
-    render_df(df)
+    render_df(df, highlight_rules=st.session_state.highlight_rules)
     render_export(df)
 
 

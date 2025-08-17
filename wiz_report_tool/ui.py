@@ -3,15 +3,54 @@ import pandas as pd
 import streamlit as st
 
 
-def render_df(df: pd.DataFrame):
-    """Render DataFrame with link column conversion.
-    Columns named containing 'url' will be rendered as hyperlinks."""
+def render_df(df: pd.DataFrame, highlight_rules: list[dict] | None = None):
+    """Render DataFrame with optional conditional formatting.
+
+    Columns with names containing ``"url"`` will be rendered as hyperlinks.
+    ``highlight_rules`` is a list of dictionaries describing formatting
+    operations.  Each rule must contain ``column``, ``op`` (one of ``>
+    < == contains``), ``value`` and an optional ``color``.  When provided,
+    ``pandas.Styler`` is used to highlight cells meeting the condition.
+    """
+
+    df = df.copy()
+
     for col in df.columns:
         if "url" in col.lower():
             df[col] = df[col].apply(
                 lambda u: f"[Link]({u})" if pd.notna(u) and str(u).strip() else ""
             )
-    st.dataframe(df, use_container_width=True)
+
+    styler = df.style
+
+    def _apply_rule(s: pd.Series, op: str, value, color: str):
+        try:
+            if op == ">":
+                mask = s > value
+            elif op == "<":
+                mask = s < value
+            elif op == "==":
+                mask = s == value
+            elif op == "contains":
+                mask = s.astype(str).str.contains(str(value), na=False)
+            else:
+                mask = pd.Series([False] * len(s))
+        except Exception:
+            mask = pd.Series([False] * len(s))
+        return [f"background-color: {color}" if m else "" for m in mask]
+
+    if highlight_rules:
+        for rule in highlight_rules:
+            color = rule.get("color", "yellow")
+            styler = styler.apply(
+                lambda s, r=rule, c=color: _apply_rule(
+                    s, r.get("op", "=="), r.get("value"), c
+                ),
+                subset=[rule.get("column")],
+            )
+        st.dataframe(styler, use_container_width=True)
+    else:
+        st.dataframe(df, use_container_width=True)
 
 
 def export_excel(df: pd.DataFrame, filename: str = "report.xlsx"):
