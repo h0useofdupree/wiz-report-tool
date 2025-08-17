@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 from wiz_report_tool.data_loader import load_csv
 from wiz_report_tool.filters import filter_dataframe
@@ -17,8 +18,23 @@ def main():
     df = load_csv(uploaded_file)
 
     df = filter_dataframe(df)
-    render_df(df)
 
+    # NOTE: Basic metrics visualisation
+    st.subheader("Summary")
+    summary_col = st.selectbox("Column to summarize", options=list(df.columns))
+    counts = df[summary_col].value_counts()
+
+    col1, col2 = st.columns(2)
+    col1.metric("Total rows", len(df))
+    col2.metric("Unique values", len(counts))
+
+    st.write(counts)
+    if pd.api.types.is_numeric_dtype(df[summary_col]):
+        st.line_chart(counts)
+    else:
+        st.bar_chart(counts)
+
+    render_df(df)
     render_export(df)
 
 
